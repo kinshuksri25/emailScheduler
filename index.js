@@ -10,20 +10,17 @@ app.use(bodyParser.json());
 
 //GET route for listing emails
 app.get('/api/readEmailList',(req,res)=>{
-    let emailEntries = [];
     domainHandler.readEntries()
     .then(response =>{
-        emailEntries = [...response];
-        res.json(emailEntries);
-    })
-    .catch(response => {
+        res.json(response);
+    }).catch(response => {
         res.send(response);
     });
 });
 
 //POST route for adding a new email schedule
 app.post('/api/addEntry',(req,res)=>{
-    domainHandler.createEntry(req)
+    domainHandler.createEntry({...req.body})
     .then(response =>{
         res.send(response);
     })
@@ -34,7 +31,7 @@ app.post('/api/addEntry',(req,res)=>{
 
 //PUT route for updating an existing entry
 app.put('/api/updateEntry',(req,res)=>{
-    domainHandler.updateEntry(req)
+    domainHandler.updateEntry({...req.body})
     .then(response =>{
         res.send(response);
     })
@@ -45,7 +42,7 @@ app.put('/api/updateEntry',(req,res)=>{
 
 //DELETE route for deleting an existing entry
 app.delete('/api/deleteEntry',(req,res)=>{
-    domainHandler.deleteEntry(req)
+    domainHandler.deleteEntry({...req.body})
     .then(response =>{
         res.send(response);
     })

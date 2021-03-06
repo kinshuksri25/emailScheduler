@@ -2,122 +2,102 @@
 
 //Dependencies
 const CronJob = require('cron').CronJob;
-const nodemailer = require("nodemailer");
 const mongo =  require('./data');
 const redisClass = require('./redis');
 const domainHandler = require('./domainHandler');
 const {EMSG,DBCONST} = require("./constants");
+const auth = require("./google_api");
 
 //object definition
 let scheduler = {};
 
 //Function for stating crons jobs
 scheduler.startJobs = () => {
-    scheduler.sendEmail().start();
+    //scheduler.sendEmail().start();
     scheduler.updateDate().start();
 }
 
 //Function for sending scheduled emails
 scheduler.sendEmailFunc = () => {
     redisClass.getAllData().then(response =>{
-        let emailCache = {};
+        let trackerNumbers = [];
         
-        let currentDate = Date();
+        let currentDate = new Date();
         currentDate.setSeconds(0);
-
         for(let itemProperty in response){
-            if(response[itemProperty] == currentDate){
-                emailCache[itemProperty] = response[itemProperty];
-            }else{
-                redisClass.deleteData(itemProperty);
+            if(new Date(response[itemProperty]) == currentDate){
+                trackerNumbers.push(parseInt(itemProperty));
             }
         }
-        
-        let recipientEmails = Object.entries(emailCache);
-        let scheduledDates = Object.keys(emailCache);
-
-        mongo.read(DBCONST.emailCollection,{$and: [ { recipientEmail: {$in: [...recipientEmails]} }, { scheduledDate: {$in : [...scheduledDates]}}]},{})
+        mongo.read(DBCONST.emailCollection,{"trackerNumber": {$in :[...trackerNumbers]}},{})
         .then(response => {
             for(const item of response){
                 if(item.scheduledDate == Date()){
-                    let transporter = nodemailer.createTransport({
-                        service: 'gmail',
-                        auth: {
-                        user: 'testac11112222@gmail.com',
-                        pass: 'testaccount'
-                        }
+                    auth.tokenGeneration()
+                    .then(response => {
+                       return auth.sendEmail(response.access_token,item);
+                    })
+                    .then(response =>{
+                        domainHandler.deleteEntry({"trackerNumber":item.trackerNumber});
+                    })
+                    .catch(response =>{
+                        console.log(response);
                     });
-                    
-                    let mailOptions = {
-                        from: 'testac11112222@gmail.com',
-                        to: item.recipientEmail,
-                        subject: item.emailSubject,
-                        text: item.emailBody
-                    };
-                    
-                    transporter.sendMail(mailOptions, function(error, info){
-                        if (error) {
-                            console.log(error);
-                        } else {
-                            domainHandler.deleteEntry({"recipientEmail":item.recipientEmail,"scheduledDate":item.scheduledDate});
-                            console.log('Email sent: ' + info.response);
-                        }
-                    }); 
                 }
             }
         })
         .catch(response => {
-            console.log(EMSG.CRN_DBREADERROR);
+            console.log(response);
         });
 
     }).catch(response => {
-        console.log(EMSG.CRN_REDISREADERROR);
+        console.log(response);
     });
 }
 
 //Function for updating missed or failed email schedules
 scheduler.updateDateFunc = () =>{
-
     redisClass.getAllData()
     .then(response =>{
-        let currentDate = Date();
+        let currentDate = new Date();
         currentDate.setSeconds(0);
 
         for(let itemProperty in response){
-            if(response[itemProperty] == currentDate){
-                let updatedDate = response[itemProperty];
+            if(new Date(response[itemProperty]) < currentDate){
+                let updatedDate = new Date(response[itemProperty]);
                 updatedDate.setDate(updatedDate.getDate() + 1);
-                domainHandler.updateEntryDate(itemProperty,response[itemProperty],updateDate);
+                domainHandler.updateEntry({trackerNumber:parseInt(itemProperty),scheduledDate:updatedDate});
             }
         }
     }).catch(response => {
-        console.log(EMSG.CRN_REDISREADERROR);
+        console.log(response);
     });
 
 }
 
 //Function for initially populating the redis cache
 scheduler.populateCache = () =>{
-    mongo.read(DBCONST.emailCollection,{},{projection:{recipientEmail : 1,scheduledDate : 1,_id : 0}})
-    .then(response =>{
-        let cacheData = [...response];
-        for(let item in cacheData){
-            redisClass.addData(item.recipientEmail,item.scheduledDate);
+    redisClass.dropCache()
+    .then(response => {
+        return mongo.read(DBCONST.emailCollection,{},{projection:{trackerNumber : 1,scheduledDate : 1,_id : 0}});
+    }).then(response =>{
+        for(let item of response){
+            redisClass.addData(item.trackerNumber,item.scheduledDate);
         }
     })
     .catch(response =>{
-        console.log(EMSG.POPCACHE);
+        console.log(response);
     });
 }
 
 //Cron for sending scheduled emails
 scheduler.sendEmail = () => {
-    return new CronJob('* * * * *', scheduler.sendEmailFunc());
+    return new CronJob('* * * * *', scheduler.sendEmailFunc);
 }
 
 //Cron for updating schedules for missed or failed emails 
 scheduler.updateDate = () =>{
-    return new CronJob('0 0 * * *',scheduler.updateDateFunc());
+    return new CronJob('* * * * *',scheduler.updateDateFunc);
 }  
 
 

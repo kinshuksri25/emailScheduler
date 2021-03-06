@@ -90,7 +90,7 @@ mongo.insert = (collection, payload, options) =>  new Promise((resolve,reject) =
 //deleting data
 //params --> collection - string, query - object, options - object,selectionType - integer
 //returns --> promise
-mongo.delete = (collection, query,updatedPayload, options, selectionType) =>  new Promise((resolve,reject) => {
+mongo.delete = (collection, query, options, selectionType) =>  new Promise((resolve,reject) => {
 
     mongo.openConnection(mongo.url).then(db => {
 

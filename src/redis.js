@@ -2,7 +2,7 @@
 
 //Dependencies
 const redis = require("redis");
-const {EMSG} = require("./constants");
+const {EMSG,SMSG} = require("./constants");
 
 //declaring the module
 let redisClass = {};
@@ -94,13 +94,13 @@ redisClass.dropCache = () => new Promise((resolve,reject) => {
 //updating data for a redis entry
 //params --> N/A
 //output --> promise
-redisClass.updateData = (key,value) => new Promise((resolve,reject => {
-    redisClass.addData(key,value).then(resolve => {
+redisClass.updateData = (key,value) => new Promise((resolve,reject) => {
+    redisClass.addData(key,value).then(response => {
         resolve(SMSG.SVR_UTL_RDSUPTDSUCC);
     }).catch(response => {
         reject(EMSG.SVR_UTL_RDSUPTDERR);
     });
-}));
+});
 
 
 //getting the entire redis cache
