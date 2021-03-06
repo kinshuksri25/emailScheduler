@@ -13,7 +13,7 @@ let scheduler = {};
 
 //Function for stating crons jobs
 scheduler.startJobs = () => {
-    //scheduler.sendEmail().start();
+    scheduler.sendEmail().start();
     scheduler.updateDate().start();
 }
 
