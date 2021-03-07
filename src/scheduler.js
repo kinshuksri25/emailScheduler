@@ -90,14 +90,14 @@ scheduler.populateCache = () =>{
     });
 }
 
-//Cron for sending scheduled emails
+//Cron for sending scheduled emails(runs every min)
 scheduler.sendEmail = () => {
     return new CronJob('* * * * *', scheduler.sendEmailFunc);
 }
 
-//Cron for updating schedules for missed or failed emails 
+//Cron for updating schedules for missed or failed emails(runs every day at midnight)
 scheduler.updateDate = () =>{
-    return new CronJob('* * * * *',scheduler.updateDateFunc);
+    return new CronJob('0 0 * * *',scheduler.updateDateFunc);
 }  
 
 
