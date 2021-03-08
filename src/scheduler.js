@@ -63,9 +63,10 @@ scheduler.updateDateFunc = () =>{
         currentDate.setSeconds(0);
 
         for(let itemProperty in response){
-            if(new Date(response[itemProperty]) < currentDate){
-                let updatedDate = new Date(response[itemProperty]);
-                updatedDate.setDate(updatedDate.getDate() + 1);
+            const itemDate = new Date(response[itemProperty]);
+            if(itemDate < currentDate){
+                let updatedDate = itemDate;
+                updatedDate.setDate(currentDate.getDate() + 1);
                 domainHandler.updateEntry({trackerNumber:parseInt(itemProperty),scheduledDate:updatedDate});
             }
         }
