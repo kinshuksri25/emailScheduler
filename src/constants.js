@@ -42,6 +42,7 @@ constants.EMSG = {
         "READ_ERROR" : "Failed to procure schedule list due to the following error:",
         "UPT_ERROR" : "Failed to update the email schedule due to the following error:",
         "INVALID_ARGS_UPT" : "Email details update failed, following arguments are needed --> (editable arguments --> recipientEmail,scheduledDate,emailSubject,emailBody),(required arguments --> trackerNumber)",
+        "BACK_DATE" : "The provided date is earlier than the current date, please provide a date post the current date",
 
         //AUTHERROR
         "SVR_OAUTH_CONNERR" : "Connection to google server couldnot be established",
