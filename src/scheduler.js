@@ -25,7 +25,7 @@ scheduler.sendEmailFunc = () => {
         let currentDate = new Date();
         currentDate.setSeconds(0);
         for(let itemProperty in response){
-            if(new Date(response[itemProperty]) == currentDate){
+            if(response[itemProperty] == currentDate){
                 trackerNumbers.push(parseInt(itemProperty));
             }
         }
