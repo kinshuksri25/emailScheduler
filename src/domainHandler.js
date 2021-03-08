@@ -21,17 +21,21 @@ domainHandler.createEntry = ({recipientEmail = null,scheduledDate = null,emailSu
         if(new Date(scheduledDate) != "Invalid Date"){
             let date = new Date(scheduledDate);
             date.setSeconds(0);
-            const scheduledEmail = new EmailTemplate({recipientEmail,scheduledDate:date,emailSubject,emailBody});
-            mongo.insert(DBCONST.emailCollection,{...scheduledEmail.getEmailDetails()},{}).then(response =>{
-                return redisClass.addData(scheduledEmail.getEmailDetails().trackerNumber,scheduledEmail.getEmailDetails().scheduledDate);
-            }).then(response => {
-                resolve(`${SMSG.SAVE_SUCCESS} with trackerNumber: ${scheduledEmail.getEmailDetails().trackerNumber}`);
-            }).catch(response =>{
-                if(response == EMSG.SVR_UTL_RDSCRERR || EMSG.SVR_UTL_RDSINCERR){
-                    domainHandler.deleteEntry({trackerNumber});
-                }
-                reject(`${EMSG.SAVE_ERROR} ${response}`);
-            });
+            if(date > new Date()){
+                const scheduledEmail = new EmailTemplate({recipientEmail,scheduledDate:date,emailSubject,emailBody});
+                mongo.insert(DBCONST.emailCollection,{...scheduledEmail.getEmailDetails()},{}).then(response =>{
+                    return redisClass.addData(scheduledEmail.getEmailDetails().trackerNumber,scheduledEmail.getEmailDetails().scheduledDate);
+                }).then(response => {
+                    resolve(`${SMSG.SAVE_SUCCESS} with trackerNumber: ${scheduledEmail.getEmailDetails().trackerNumber}`);
+                }).catch(response =>{
+                    if(response == EMSG.SVR_UTL_RDSCRERR || EMSG.SVR_UTL_RDSINCERR){
+                        domainHandler.deleteEntry({trackerNumber});
+                    }
+                    reject(`${EMSG.SAVE_ERROR} ${response}`);
+                });
+            }else{
+                reject(EMSG.BACK_DATE);
+            }
         }else{
             reject(EMSG.INVALID_DATE_PATTERN);
         }
@@ -74,6 +78,7 @@ domainHandler.updateEntry = (args) => new Promise ((resolve,reject) =>{
         &&(args.hasOwnProperty("trackerNumber"))){
 
         if(args.hasOwnProperty("scheduledDate") && new Date(args.scheduledDate) == "Invalid Date"){ 
+            new Date(args.scheduledDate) <= new Date() && reject(EMSG.BACK_DATE);
             reject(EMSG.INVALID_DATE_PATTERN);         
         }
 
